@@ -44,8 +44,6 @@ MODULE ff
   INTEGER, PARAMETER :: npy = CEILING(sidey/szp)
   !numero de francos em cada particao
   INTEGER :: num_part(npx,npy)
-  !particoes
-  INTEGER :: parti(npx,npy,n_frangos)
   !temperatura em cada particao
   REAL :: Temp(npx,npy)
   !indice de temperatura para cada frango

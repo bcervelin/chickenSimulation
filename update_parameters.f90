@@ -28,7 +28,7 @@ MODULE update_parameters
   REAL, PARAMETER :: calormin = 2.0 /15.0
   REAL, PARAMETER :: calormax = 5*calormin
   REAL, PARAMETER :: DeltaCalor = Calormax-Calormin
-  REAL, PARAMETER :: friomin = 1.0 /1.0d1
+  REAL, PARAMETER :: friomin = 1.0 /10.0
   REAL, PARAMETER :: friomax = 7*friomin
   REAL, PARAMETER :: DeltaFrio = Friomax-Friomin
   REAL, PARAMETER :: Tmax = 23.0
@@ -43,16 +43,16 @@ MODULE update_parameters
   REAL, PARAMETER :: rmin = 0.3
   REAL, PARAMETER :: DeltaR = rmax-rmin
   !increase and decrease parameters
-  REAL,PARAMETER :: upcalor   = calormin/1.2d2,        &
-                    downcalor = 2*calormin/6.0d1,      &
-                    upfrio    = friomin/1.8d2,         &
-                    downfrio  = 2*friomin/1.2d2  ,     &
-                    dormirfome = 9.0 *fmin/(6*3.6d3 ),&
-                    downfome =  5.0 *fmin/1.2d2,       &
-                    upfome =   fmin/6.0d2,             &
-                    dormirsede = 9.0 *smin/(6*3.6d3 ),&
-                    downsede = 6.0 *smin/2.0d1,       &
-                    upsede =   smin/1.3d2,             &
+  REAL,PARAMETER :: upcalor   = calormin/120.0,        &
+                    downcalor = 2*calormin/60.0,      &
+                    upfrio    = friomin/180.0,         &
+                    downfrio  = 2*friomin/120.0  ,     &
+                    dormirfome = 9.0 *fmin/(6*3600.0 ),&
+                    downfome =  5.0 *fmin/120.0,       &
+                    upfome =   fmin/600.0,             &
+                    dormirsede = 9.0 *smin/(6*3600.0 ),&
+                    downsede = 6.0 *smin/20.0,       &
+                    upsede =   smin/130.0,             &
                     upsono = sonomin/(19*3600.0),      &
                     downsono = 1.0/(5*3600.0),         &
                     vida = 42*24*3600.0, &
@@ -69,26 +69,24 @@ MODULE update_parameters
 
 CONTAINS
 
-!funcao calcula o indice TEIbc - disponicel em Math Model for Thermal
-!entradas :: m,n       = dimensoes das particoes no espaco
-!         :: Temp(m,n) = temperatura sentida em cada particao
-!                        (considerando apenas concentracao de frangos)
-!         :: RH        = umidade relativa do ar (constante em todo aviario)
-!         :: V         = velocidade do ar (constante em todo aviario)
-!saida    :: Tindex    = indice TEIbc
+!evaluate index TEIbc
+!input    :: m,n       = dimensions of space partitions
+!         :: Temp(m,n) = temperature in each partition
+!         :: RH        = relative humidity
+!         :: V         = air velocity
+!output   :: Tindex    = TEIbc index
 real function TEIbc(Temp,RH,V)
   implicit none
   real :: Temp,RH,V
-  !comeca rotina
+  !begin function
   TEIbc = 45.6026 - 2.3107*Temp - 0.3683*RH + 9.7092*V + 0.05492*Temp**2 + &
            0.00121*RH**2 + 0.66329*V**2 + 0.0128968*Temp*RH - 0.300928*Temp*V - &
            0.05952*RH*V
-  !write(*,*) Temp,RH,V,TEIbc
-  !normaliza o indice - menor que 27 - conforto
-  !                     maior que 35 - desconforto extremo
+  !normalize index - lower than  27 - comfort
+  !                - bigger than 35 - extreme discomfort
   TEIbc = max(TEIbc-27.,0.)/3.
 end function
-!find partition the chicken is
+!find chickens partition
 SUBROUTINE find_part(x,px,py)
   USE ff
   IMPLICIT NONE
@@ -99,14 +97,15 @@ SUBROUTINE find_part(x,px,py)
   IF (py .EQ. 0) py = 1
   IF (px .EQ. 0) px = 1
 END SUBROUTINE
-
+!find nearest eater from chicken position
 SUBROUTINE nearest_eater(x,pi,pj)
   USE ff
   IMPLICIT NONE
   REAL :: x(2),pi,pj
   !local
   REAL :: xi,pf,pc
-  !comeca rotina
+  !begin routine
+  !horinzontal position
   xi =  x(1) + sxD2
   IF (xi .LE. espc) THEN
     pi = espc-sxD2
@@ -121,21 +120,22 @@ SUBROUTINE nearest_eater(x,pi,pj)
       pi = pf - sxD2
     END IF
   END IF
-  !encontra posicao y do comedouro mais proximo
+  !find vertical position
   IF (x(2) .GT. 0.0 ) THEN
     pj = 4*syD5 - syD2
   ELSE
     pj = syD5 - syD2
   END IF
 END SUBROUTINE
-
+!find nearest eater from chicken position
 SUBROUTINE nearest_drinker(x,pi,pj)
   USE ff
   IMPLICIT NONE
   REAL :: x(2),pi,pj
   !local
   REAL :: xi,pf,pc
-  !comeca rotina
+  !begin routine
+  !horinzontal position
   xi =  x(1) + sxD2
   IF (xi .LE. espb) THEN
     pi = espb-sxD2
@@ -150,14 +150,14 @@ SUBROUTINE nearest_drinker(x,pi,pj)
       pi = pf - sxD2
     END IF
   END IF
-  !encontra posicao y do comedouro mais proximo
+  !find vertical position
   IF (x(2) .GT. 0.0 ) THEN
     pj = 3*syD5 - syD2
   ELSE
     pj = 2*syD5 - syD2
   END IF
 END SUBROUTINE
-
+!count number of alive chickens and create a vector with their indexes
 subroutine vec_vivos(n,morto,n_vivos,vivos)
   implicit NONE
   integer :: n, n_vivos
@@ -165,7 +165,7 @@ subroutine vec_vivos(n,morto,n_vivos,vivos)
   real :: morto(n)
   !local
   integer :: i,j,count,aux(n)
-  !comeca rotina
+  !begin routine
   count = 0
   do j  = 1,n_vivos
     i = vivos(j)
@@ -177,23 +177,22 @@ subroutine vec_vivos(n,morto,n_vivos,vivos)
   n_vivos = count
   vivos(1:n_vivos) = aux(1:n_vivos)
 end subroutine
-
-
-SUBROUTINE update_all(n,x,dt,hora,fome,sede,calor,frio,sono,conf,r,dormindo,vivos,n_vivos,morto)
+!update all parameters
+SUBROUTINE update_all(n,x,dt,fome,sede,calor,frio,sono,conf,r,dormindo,vivos,n_vivos,morto)
   USE ff
   IMPLICIT NONE
   INTEGER :: n,dormindo,n_vivos,vivos(n)
-  REAL :: x(n,2),dt,hora,fome(n),sede(n),calor(n),frio(n),sono(n),morto(n)
+  REAL :: x(n,2),dt,fome(n),sede(n),calor(n),frio(n),sono(n),morto(n)
   REAL :: conf,r
   !local
   INTEGER :: i,ii,jj,j
   REAL :: xi,yi,influ,sz, confi(n)
-  !comeca rotina
+  !begin routine
   DO j = 1,n_vivos
       i = vivos(j)
       if (morto(i) .le. 1) then
       IF (dormindo .eq. 0) THEN
-        !fome
+        !hunger
         CALL nearest_eater(x(i,:),xi,yi)
         sz = SQRT((xi-x(i,1))**2+(yi-x(i,2))**2)
         IF (sz .LE. force_max ) THEN
@@ -201,8 +200,7 @@ SUBROUTINE update_all(n,x,dt,hora,fome,sede,calor,frio,sono,conf,r,dormindo,vivo
         ELSE
           fome(i) = MIN(fome(i)+upfome*dt,1.0 )
         END IF
-        !sede
-        !calor influencia na sede
+        !thirst
         CALL nearest_drinker(x(i,:),xi,yi)
         sz = SQRT((xi-x(i,1))**2+(yi-x(i,2))**2)
         IF (sz .LE. force_max) THEN
@@ -214,83 +212,79 @@ SUBROUTINE update_all(n,x,dt,hora,fome,sede,calor,frio,sono,conf,r,dormindo,vivo
         fome(i) = MIN(fome(i) + dormirfome*dt,1.0 )
         sede(i) = MIN(sede(i) + dormirsede*(1+calor(i))*dt,1.0 )
       END IF
-      !termico
+      !thermal parameters
       CALL find_part(x(i,:),ii,jj)
-      !atualiza o Indice termico
+      !update thermal index
       Tindex(i) = TEIbc(Temp(ii,jj),RH,AS)
-      !desconforto termico
+      !verify if there is thermal discomfort
       if (Tindex(i) .gt. 0) THEN
         influ = min(Tindex(i),1.0)
-        !frio - desconforto eh maior do que se a temperatura fosse maior
+        !if thermal index is bigger when the temperature increases, chicken is feeling cold
         if (Tindex(i) .gt. TEIbc(Temp(ii,jj)+1,RH,AS)) THEN
           IF (calor(i) .LT. calormin) THEN
             frio(i) = MIN(frio(i) + influ*upfrio*dt,1.0 )
           ENDIF
           calor(i) = MAX(calor(i) - (1+influ)*downcalor*dt,0.0 )
-        !calor
+        !hot
         ELSE
           IF (frio(i) .LT. friomin) THEN
             calor(i) = MIN(calor(i) + influ*upcalor*dt,1.0 )
           END IF
           frio(i) = MAX(frio(i) - (1+influ)*downfrio*dt,0.0 )
         end if
-      !conforto termico
+      !thermal comfort
       ELSE
         frio(i) = MAX(frio(i) - downfrio*dt,0.0 )
         calor(i) = MAX(calor(i) - downcalor*dt,0.0 )
       END IF
     end if
   END DO
-  !conforto
+  !evaluate chicken comfort
   confi = (1.0  - MAX(fome-3*fmin,0.0 )/(1.0-3*fmin))* &
           (1.0  - MAX(sede-3*smin,0.0 )/(1.0-3*smin))* &
           (1.0  - MAX(frio-1.5*friomin,0.0 )/(1.0-1.5*friomin))* &
           (1.0  - MAX(calor-1.5*calormin,0.0 )/(1.0-1.5*calormin))
   call update_morto(n,confi,vivos,n_vivos,morto,dt)
-  !sono
+  !sleep
   IF (dormindo .eq. 0) THEN
     sono = MIN(sono + upsono*dt,1.0 )
   ELSE
     sono = MAX(sono - (1 - (MAX(confmin - confi,0.0 ))/confmin)*downsono*dt,0.0 )
   END IF
-  !atualiza conforto com sono
+  !use sleep to evaluate average comfort
   confi = confi/(1+MAX(sono-sonomin,0.0 )/(1-sonomin))
   conf = SUM(confi(vivos(1:n_vivos)))/n_vivos
-  !tamanho
-  !atualiza tamanho pela versao exponencial
+  !chicken size
   call update_radius(r,dt*MIN(confmin,conf)/confmin)
-  !r = r + dt*(MIN(confmin,conf)/confmin)*DeltaR/vida
 END SUBROUTINE
-
+!update chicken radius
 subroutine update_radius(r,dt)
   implicit NONE
   real :: r,dt
   !local
-  integer :: i,j
-  real :: fatorial
   real :: k = 1-exp(-1.0)
-  real :: soma = 0
   !comeca rotina
   r = r + (DeltaR/K + rmin - r)*(1-exp(-dt/vida))
 end subroutine
-
+!update dead parameter
 SUBROUTINE update_morto(n,confi,vivos,n_vivos,morto,dt)
   implicit NONE
   integer:: n, n_vivos,vivos(n)
   real :: confi(n),morto(n),dt
   !local
+  real :: eps = 1e-16
   integer :: i,j
   !comeca rotina
   do j = 1,n_vivos
     i = vivos(j)
-    if (confi(i) .eq. 0) then
+    if (abs(confi(i)) .lt. eps) then
       morto(i) = min(morto(i) + upmorto*dt,1.0)
     else
       morto(i) = max(morto(i) - downmorto*dt,0.0)
     end if
   end do
 end SUBROUTINE
-
+!average gaussian filter
 FUNCTION average_filter(m,n,A) RESULT(FA)
   IMPLICIT NONE
   INTEGER :: m,n,A(m,n)
@@ -316,7 +310,7 @@ FUNCTION average_filter(m,n,A) RESULT(FA)
   END DO
   FA = FA/16.0
 END FUNCTION
-
+!update partition informations
 SUBROUTINE update_part(n,x,r,Tamb,vivos,n_vivos)
   USE ff
   IMPLICIT NONE
@@ -325,17 +319,15 @@ SUBROUTINE update_part(n,x,r,Tamb,vivos,n_vivos)
   REAL, PARAMETER :: pi = 4. *ATAN(1. )
   !local
   INTEGER :: i,j,px,py,np
-  !comeca rotina
+  !begin routine
   num_part = 0
-  parti = 0
   DO j = 1,n_vivos
     i = vivos(j)
     CALL find_part(x(i,:),px,py)
     num_part(px,py) = num_part(px,py) + 1
     np = num_part(px,py)
-    parti(px,py,np) = i
   END DO
-  !calcula a temperatura em cada particao
+  !evaluate temperature in each partition
   Temp = average_filter(npx,npy,num_part)
   do i = 1,npx
     Temp(i,:) = Tamb(i) + (Tchicken-Tamb(i))*Temp(i,:)*(pi*r**2)/(szp**2)

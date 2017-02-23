@@ -21,39 +21,36 @@ PUBLIC :: force_fome, decide_fome_sede_temp,force_temp
 PRIVATE :: force_sede, temp_subroutine, maior, menor
 
 CONTAINS
-
+!force from hunger
 FUNCTION force_fome(x,fome) RESULT(f)
   USE update_parameters
   IMPLICIT NONE
   REAL :: x(2), fome, f(2)
   !local
   REAL cx,cy,norm,influ
-  !comeca rotina
+  !begin function
   f=0.0
-  !IF (fome .GT. fmin) THEN
-    CALL nearest_eater(x,cx,cy)
-    cx = (cx - x(1))
-    cy = (cy - x(2))
-    norm = SQRT(cx**2+cy**2)
-    IF (norm .GT. force_max) THEN
-      cx = force_max*cx/norm
-      cy = force_max*cy/norm
-      influ = sqrt(fome)
-      f(1) = influ*cx
-      f(2) = influ*cy
-    END IF
-  !END IF
+  CALL nearest_eater(x,cx,cy)
+  cx = (cx - x(1))
+  cy = (cy - x(2))
+  norm = SQRT(cx**2+cy**2)
+  IF (norm .GT. force_max) THEN
+    cx = force_max*cx/norm
+    cy = force_max*cy/norm
+    influ = sqrt(fome)
+    f(1) = influ*cx
+    f(2) = influ*cy
+  END IF
 END FUNCTION
-
+!force from thirst
 FUNCTION force_sede(x,sede,calor) RESULT(f)
   USE update_parameters
   IMPLICIT NONE
-  INTEGER :: n
   REAL :: x(2), sede, f(2), calor
   !local
   REAL cx,cy,norm
   REAL influ
-  !comeca rotina
+  !begin function
   f =0.0
   CALL nearest_drinker(x,cx,cy)
   cx = (cx - x(1))
@@ -67,7 +64,7 @@ FUNCTION force_sede(x,sede,calor) RESULT(f)
     f(2) = influ*cy
   END IF
 END FUNCTION
-
+!evaluate distance from nearest eater
 function dist_eater(x) result(r)
   use update_parameters
   implicit NONE
@@ -77,7 +74,7 @@ function dist_eater(x) result(r)
   CALL nearest_eater(x,cx,cy)
   r = SQRT((x(1)-cx)**2+(x(2)-cy)**2)
 end function
-
+!evaluate distance from neaters drinker
 function dist_drinker(x) result(r)
   use update_parameters
   implicit NONE
@@ -87,7 +84,7 @@ function dist_drinker(x) result(r)
   CALL nearest_drinker(x,cx,cy)
   r = SQRT((x(1)-cx)**2+(x(2)-cy)**2)
 end function
-
+!decide if the parameter force comes from hunger, thirst, hot or cold
 SUBROUTINE decide_fome_sede_temp(n,x,fome,sede,calor,frio,f,vivos,n_vivos)
   USE ff
   use update_parameters
@@ -95,49 +92,54 @@ SUBROUTINE decide_fome_sede_temp(n,x,fome,sede,calor,frio,f,vivos,n_vivos)
   INTEGER :: n,n_vivos,vivos(n)
   REAL :: x(n,2), fome(n),sede(n),f(n,2),calor(n),frio(n)
   !local
+  real :: eps = 1e-16
   INTEGER :: i,j
   REAL ::maximo
-  !comeca rotina
+  !begin routine
   DO j = 1,n_vivos
     i = vivos(j)
-    !se frango esta bebendo fica comendo até matar a sede.
+    !if chicken is drinking, it drinks untill sattiated
     if ((sede(i) .gt. smin/2.0) .and. (dist_drinker(x(i,:)) .lt. force_max)) THEN
       f(i,:) = 0.0
     else
       maximo = MAX(fome(i),sede(i),calor(i),frio(i))
-      IF (maximo .EQ. fome(i)) THEN
+      !if bigger parameter is hunger
+      IF (abs(maximo - fome(i)) .lt. eps) THEN
         f(i,:) = force_fome(x(i,:),fome(i))
-      ELSEIF (maximo .EQ. sede(i)) THEN
+      !if bigger parameter is thist
+    ELSEIF (abs(maximo - sede(i)) .lt. eps) THEN
         f(i,:) = force_sede(x(i,:),sede(i),calor(i))
+      !if bigger parameter is hot or cold
       ELSE
         f(i,:) = force_temp(x(i,:),calor(i),frio(i),Tindex(i))
       END IF
     ENDIF
   END DO
 END SUBROUTINE
-
+!evaluate force from temperature
 FUNCTION force_temp(x,calor,frio,influ) RESULT(f)
   USE ff
   USE update_parameters
   IMPLICIT NONE
   REAL :: x(2), f(2),fi(2),calor,frio
   !local
-  INTEGER :: px,py, ki,kj,ii,jj
-  INTEGER :: poss(8), n_poss,aux
+  INTEGER :: px,py
   REAL :: influ
-  !comeca rotina
+  !begin function
   f = 0.0
+  !if chicken is feeling cold
   IF (frio .GT. friomin) THEN
     CALL find_part(x,px,py)
     CALL temp_subroutine(x,px,py,maior,fi)
     f = influ*fi
+  !if chicken is feeling hot
   ELSEIF (calor .GT. calormin) THEN
     CALL find_part(x,px,py)
     CALL temp_subroutine(x,px,py,menor,fi)
     f = influ*fi
   END IF
 END FUNCTION
-
+!auxilar routine for temperature force
 SUBROUTINE temp_subroutine(x,px,py,compara,f)
   USE ff
   use update_parameters
@@ -147,13 +149,13 @@ SUBROUTINE temp_subroutine(x,px,py,compara,f)
   LOGICAL :: compara
   REAL x(2),f(2)
   !local
-  INTEGER :: n_poss,ind,i,j
-  REAL :: r,poss(8,2)
-  !comeca rotina
+  INTEGER :: n_poss,ind,i,j,poss(8,2)
+  REAL :: r
+  !begin routine
   f = 0.0
-  !verifica possibilidade para se mover
+  !verify if there`s a more confortable neighbor partition
   n_poss = 0
-  poss = 0.0
+  poss = 0
   DO i = MAX(px-1,1),MIN(px+1,npx)
     DO j = MAX(py-1,1),MIN(py+1,npy)
       IF (compara(Temp(i,j),Temp(px,py))) THEN
@@ -163,9 +165,9 @@ SUBROUTINE temp_subroutine(x,px,py,compara,f)
       END IF
     END DO
   END DO
-  !casa contrario frango se move na direcao da particao
+  !if there is
   IF (n_poss > 0) THEN
-    !escolhe aleatorio das entre as possibilidades
+    !randomly choose a more comfortable partition
     ind = rand_int(1,n_poss)
     i = poss(ind,1)
     j = poss(ind,2)
@@ -177,19 +179,19 @@ SUBROUTINE temp_subroutine(x,px,py,compara,f)
     END IF
   END IF
 END SUBROUTINE
-
+!auxiliar function used to verify if a > b
 LOGICAL FUNCTION maior(a,b)
   IMPLICIT NONE
   REAL :: a,b
   maior = (a .GT. b)
 END FUNCTION
-
+!auxiliar function used to verify if a < b
 LOGICAL FUNCTION menor(a,b)
   IMPLICIT NONE
   REAL :: a,b
   menor = (a .LT. b)
 END FUNCTION
-
+!wall force function
 FUNCTION force_parede(n,x,v) RESULT(f)
   USE ff
   use update_parameters
@@ -197,9 +199,9 @@ FUNCTION force_parede(n,x,v) RESULT(f)
   INTEGER :: n
   REAL :: x(n,2),v(n,2),f(n,2)
   !local
-  INTEGER :: i,j
+  INTEGER :: i
   REAL :: tol = 1.0 ,rx,ry
-  !comeca rotina
+  !beggin function
   f = 0.0
   DO i = 1,n
     rx = (ABS(x(i,1) +sxD2))

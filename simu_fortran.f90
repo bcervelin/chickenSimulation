@@ -3,8 +3,7 @@
 !
 !chickenSimulation is free software: you can redistribute it and/or modify
 !it under the terms of the GNU General Public License as published by
-!the Free Software Foundation, either version 3 of the License, or
-!(at your option) any later version.
+!the Free Software Foundation version 3.
 !
 !This program is distributed in the hope that it will be useful,
 !but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -84,7 +83,7 @@ PROGRAM simu_frangos
       CALL update_part(n,x,r,Tamb,vivos,n_vivos)
     END IF
     !update parameters
-    CALL update_all(n,x,dt,hora,fome,sede,calor,frio,sono,conf,r,dorme,vivos,n_vivos,morto)
+    CALL update_all(n,x,dt,fome,sede,calor,frio,sono,conf,r,dorme,vivos,n_vivos,morto)
     call vec_vivos(n,morto,n_vivos,vivos)
     !if chickens are awaken
     IF (dorme .eq. 0) THEN
@@ -93,7 +92,7 @@ PROGRAM simu_frangos
       !evalute force from parameter
       CALL decide_fome_sede_temp(n,x,fome,sede,calor,frio,f,vivos,n_vivos)
       ! Add friction force
-      f(vivos(1:n_vivos),:) = f(vivos(1:n_vivos),:) - 0.5 *v(vivos(1:n_vivos),:)
+      f(vivos(1:n_vivos),:) = f(vivos(1:n_vivos),:) - lambda *v(vivos(1:n_vivos),:)
       !wall force
       f_parede(vivos(1:n_vivos),:) = force_parede(n_vivos,x(vivos(1:n_vivos),:),v(vivos(1:n_vivos),:))
       !random force
@@ -127,7 +126,7 @@ PROGRAM simu_frangos
       call imprimetela(n,fome,sede,Tamb,frio,calor,sono,conf,r,dia,vivos,n_vivos)
     END IF
     !print chicken position at 9:00 a.m.
-    if (hora .eq. 9.0) then
+    if (abs(hora - 9.0) .lt. 1e-16) then
       ind = ind+1
       CALL printx(n,x,ind,vivos,n_vivos)
     end if
@@ -178,7 +177,7 @@ contains
     use ff
     implicit none
     integer :: n,n_vivos,vivos(n),dia
-    real :: fome(n),sede(n),Tamb(npx),frio(n),calor(n),sono(n),conf,r,hora
+    real :: fome(n),sede(n),Tamb(npx),frio(n),calor(n),sono(n),conf,r
     WRITE(*,'(" Day= ", I9, " hunger ", f9.2, " thirst ", f9.2, " temp  ", f9.2, " Tidx ",f9.2)') &
             dia, SUM(fome(vivos(1:n_vivos)))/n_vivos, SUM(sede(vivos(1:n_vivos)))/n_vivos, &
             sum(Tamb)/npx, sum(Tindex(vivos(1:n_vivos)))/n_vivos
@@ -191,7 +190,7 @@ contains
     USE ff
     IMPLICIT NONE
     INTEGER :: n, i,ind,n_vivo,j
-    REAL :: x(n,2), xt, yt
+    REAL :: x(n,2)
     integer :: vivo(n)
     Character(len=11) :: nome
     !find closest pixel to chicken position
@@ -245,7 +244,7 @@ contains
     open(38,file='frio.m')
     open(39,file='calor.m')
     !save files
-    write(32,*) 'c =[',1.0,';'
+    write(32,*) 'c =[',conf,';'
     write(33,*) 'v =[',n_vivos,';'
     write(34,*) 'r =[',r,';'
     write(35,*) 's =[',sum(sede)/n,';'
