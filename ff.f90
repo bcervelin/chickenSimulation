@@ -16,45 +16,46 @@
 !
 MODULE ff
   IMPLICIT NONE
-  !dias de simulacao
+  !number of days to be simulated
   integer, parameter :: dias = 3
-  !numero de frangos
+  !number of chickens
   INTEGER, PARAMETER :: n_frangos = 1000
-  !nuymero de comedouros e beberos
+  !number of eates and number of water fountains
   INTEGER, PARAMETER :: nc=450!INT(n_frangos/2/45)
   INTEGER, PARAMETER :: nb=2000!INT(n_frangos/2/10)
-  !tamanho do aviario
+  !size of the broiler house in dm
   REAL, PARAMETER :: sidex = 1500.  !1pixel = 0.1 m
   REAL, PARAMETER :: sidey = 200.
-  !constantes usadas repetidamente
-  real :: sxD2 = sidex/2.0
-  real :: syD2 = sidey/2.0
-  real :: syD5 = sidey/5.0
-  real :: segundos = 24*3600.0
-  !espacao entre comedouros
+  !some constants
+  real, parameter :: sxD2 = sidex/2.0
+  real, parameter :: syD2 = sidey/2.0
+  real, parameter :: syD5 = sidey/5.0
+  real, parameter :: segundos = 24*3600.0
+  !distance between eates
   REAL, PARAMETER :: espc = sidex/(nc+1)
-  !espacao entre beberoudos
+  !distance between water fountains
   REAL, PARAMETER :: espb = sidex/(nb+1)
 
-  !tamanho das particoes
+  !size of partition in dm
   REAL, PARAMETER :: szp = 10.0
 
-  !numero de particoes
+  !number of partitions
   INTEGER, PARAMETER :: npx = CEILING(sidex/szp)
   INTEGER, PARAMETER :: npy = CEILING(sidey/szp)
-  !numero de francos em cada particao
+  !number of chickens in each partition
   INTEGER :: num_part(npx,npy)
-  !temperatura em cada particao
+  !temperature felt in each partition
   REAL :: Temp(npx,npy)
-  !indice de temperatura para cada frango
+  !Normalized thermal index for each chicken
   real :: Tindex(n_frangos)
-  !temperatura na entrada e na saida de ar (ºC)
+  !Temperatures at the entrance and at the exit of the house in graus C
   real, parameter :: Tin = 20, Tout = 22
-  !umidade relativa (%) e velocidade do ar (m/s)
+  !Relative Humidity (%) e air velocity (m/s)
   real :: RH = 50, AS = 1
 
 CONTAINS
   subroutine image_vector(n,x)
+  !subroutine that prevents the chicken from exiting the house limits  
     IMPLICIT NONE
     INTEGER :: n
     REAL :: x(n,2)

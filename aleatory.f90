@@ -3,7 +3,7 @@
         CONTAINS
 
         REAL FUNCTION normal(mean,sigma)
-
+          !normal distribution
           IMPLICIT NONE
           REAL :: mean, sigma, u1, u2
 

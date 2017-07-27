@@ -14,11 +14,17 @@
 !along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 PROGRAM simu_frangos
+  !module with the simulation internal parameters - modify it to use with the
+  !especifities of your problem
   USE ff
+  !module with the forces applied over the chickens
   USE forces
+  !module with the random variables subroutines
   USE aleatory
+  !module with the parameter update subroutines
   USE update_parameters
   IMPLICIT NONE
+  !number of chickens in broiler house
   INTEGER, PARAMETER :: n = n_frangos
   INTEGER :: i , seed
   !time discretization, total simulation time, in seconds and number of steps needed to perform the simulation

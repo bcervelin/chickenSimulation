@@ -30,10 +30,12 @@ FUNCTION force_fome(x,fome) RESULT(f)
   REAL cx,cy,norm,influ
   !begin function
   f=0.0
+  !find the eater closer to the chicken position
   CALL nearest_eater(x,cx,cy)
   cx = (cx - x(1))
   cy = (cy - x(2))
   norm = SQRT(cx**2+cy**2)
+  !if the chicken is far from the eater, it will moves towards it.
   IF (norm .GT. force_max) THEN
     cx = force_max*cx/norm
     cy = force_max*cy/norm
@@ -52,10 +54,12 @@ FUNCTION force_sede(x,sede,calor) RESULT(f)
   REAL influ
   !begin function
   f =0.0
+  !find the eater closer to the chicken position
   CALL nearest_drinker(x,cx,cy)
   cx = (cx - x(1))
   cy = (cy - x(2))
   norm = SQRT(cx**2+cy**2)
+  !if the chicken is far from the eater, it will moves towards it.
   IF (norm .GT. force_max) THEN
     cx = force_max*cx/norm
     cy = force_max*cy/norm
@@ -102,14 +106,15 @@ SUBROUTINE decide_fome_sede_temp(n,x,fome,sede,calor,frio,f,vivos,n_vivos)
     if ((sede(i) .gt. smin/2.0) .and. (dist_drinker(x(i,:)) .lt. force_max)) THEN
       f(i,:) = 0.0
     else
+      !find the biggest parameter
       maximo = MAX(fome(i),sede(i),calor(i),frio(i))
-      !if bigger parameter is hunger
+      !if bigger parameter is hunger, parameter force comes from hunger
       IF (abs(maximo - fome(i)) .lt. eps) THEN
         f(i,:) = force_fome(x(i,:),fome(i))
-      !if bigger parameter is thist
+      !if bigger parameter is thist, parameter force comes from thirst
     ELSEIF (abs(maximo - sede(i)) .lt. eps) THEN
         f(i,:) = force_sede(x(i,:),sede(i),calor(i))
-      !if bigger parameter is hot or cold
+      !if bigger parameter is hot or cold, parameter force comes from temperature
       ELSE
         f(i,:) = force_temp(x(i,:),calor(i),frio(i),Tindex(i))
       END IF
@@ -153,7 +158,8 @@ SUBROUTINE temp_subroutine(x,px,py,compara,f)
   REAL :: r
   !begin routine
   f = 0.0
-  !verify if there`s a more confortable neighbor partition
+  !verify if there`s a more confortable neighbor partition, and if it exists,
+  !store it for future use
   n_poss = 0
   poss = 0
   DO i = MAX(px-1,1),MIN(px+1,npx)
@@ -171,6 +177,7 @@ SUBROUTINE temp_subroutine(x,px,py,compara,f)
     ind = rand_int(1,n_poss)
     i = poss(ind,1)
     j = poss(ind,2)
+    !the force will push the chicken to the center of the chosen partition
     f(1) = (i*szp-0.5*szp - sxD2) - x(1)
     f(2) = (j*szp-0.5*szp - syD2) - x(2)
     r = SQRT(f(1)**2+f(2)**2)
@@ -206,20 +213,24 @@ FUNCTION force_parede(n,x,v) RESULT(f)
   DO i = 1,n
     rx = (ABS(x(i,1) +sxD2))
     ry = (ABS(x(i,2) +syD2))
+    !if the chicken is close to left wall
     IF (rx .LT. tol) THEN
       if (v(i,1) .LT. 0.0 ) f(i,1) = -v(i,1)
       f(i,1) = f(i,1) + force_max*sidex/800.0
     ENDIF
+    !if the chicken is close to the botton wall
     IF (ry .LT. tol) THEN
       if (v(i,2) .LT. 0.0 ) f(i,2) = -v(i,2)
       f(i,2) = f(i,2) + force_max*sidey/200.0
     ENDIF
     rx = (ABS(sxD2 - x(i,1)))
     ry = (ABS(syD2 - x(i,2)))
+    !if the chicken is close to the right wall
     IF (rx .LT. tol) THEN
       if (v(i,1) .GT. 0.0 ) f(i,1) = -v(i,1)
       f(i,1) = f(i,1) - force_max*sidex/800.0
     ENDIF
+    !if the chicken is close to the upper wall
     IF (ry .LT. tol) THEN
       if (v(i,2) .GT. 0.0 ) f(i,2) = -v(i,2)
       f(i,2) = f(i,2) - force_max*sidey/200.0
