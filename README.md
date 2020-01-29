@@ -19,7 +19,7 @@ you can use it as you wish, but we will be very pleased if you cite our PhD
 Thesis:  
 Cervelin, B.H., Simulação da dinâmica de frangos em aviários e uma nova
 abordagem para a função de conforto  UNICAMP, 2017.
-<http://repositorio.unicamp.br/jspui/handle/REPOSIP/324305>
+<http://repositorio.unicamp.br/jspui/handle/REPOSIP/324305>  
 and/or the paper:  
 Cervelin, B.H., Conti, D., Diniz-Ehrhardt, M.A., Martínez, J.M. A computer model
 for particle-like simulation in broiler houses. Computers and Electronics in
