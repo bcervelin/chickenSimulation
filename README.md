@@ -36,3 +36,7 @@ This version is a simplified implementation:
 - some minor bugs were fixed;  
 - a optimization like objective function was implemented;  
 - added a scale parameter;  
+
+## Contact:
+
+If you want more information about the usage of this code, please, send an e-mail to <bcervelin@gmail.com>
